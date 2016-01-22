@@ -1,46 +1,71 @@
 import config  # file that contains my API token
 import requests  # used to make the API request
+import shelve  # simple persistent storage option
 from xml.etree import ElementTree  # used to parse XML
 
 
 def main():
     print "Welcome to the Muni Script!"
 
-    valid_route = False
+    route_answer = ''
+    favorite_answer = ''
     all_routes = get_muni_routes()
-    while not valid_route:
-        route_answer = raw_input("Enter the muni route you want: ")
+    while not route_answer or not favorite_answer:
+        answer = raw_input("Enter the muni route you or favorite: ")
 
-        if route_answer in all_routes.keys():
-            valid_route = True
+        if answer in all_routes.keys():
+            route_answer = answer
+            print "Got it!"
+            break
+        elif answer in all_favorites():
+            favorite_answer = answer
             print "Got it!"
             break
         else:
-            print "Pick one of these: "
+            print "Favorites: "
+            print ", ".join(all_favorites())
+            print "Routes: "
             print ", ".join(all_routes.keys())
 
-    direction_answer = ""
-    while direction_answer not in ["Inbound", "Outbound"]:
-        direction_answer = raw_input("Inbound or Outbound? ")
+    if route_answer:
+        direction_answer = ""
+        while direction_answer not in ["Inbound", "Outbound"]:
+            direction_answer = raw_input("Inbound or Outbound? ")
 
-    valid_stop = False
-    all_stops = get_route_stops(all_routes[route_answer], direction_answer)
-    while not valid_stop:
-        stop_answer = raw_input("Enter the stop you want: ")
+        valid_stop = False
+        all_stops = get_route_stops(all_routes[route_answer], direction_answer)
+        while not valid_stop:
+            stop_answer = raw_input("Enter the stop you want: ")
 
-        if stop_answer in all_stops.keys():
-            valid_stop = True
-            print "Got it!"
-            break
-        else:
-            print "Pick one of these: "
-            print ", ".join(all_stops.keys())
+            if stop_answer in all_stops.keys():
+                valid_stop = True
+                print "Got it!"
+                break
+            else:
+                print "Pick one of these: "
+                print ", ".join(all_stops.keys())
+        stop_code = all_stops[stop_answer]
 
-    all_times = get_next_departures(all_stops[stop_answer])
-    print "Next departure time for route " \
-        + route_answer + " " + direction_answer \
-        + " and stop " + stop_answer + ":"
+    if favorite_answer:
+        stop_code = get_favorite_info(favorite_answer)['stop_code']
+
+    all_times = get_next_departures(stop_code)
+    print "Next departure times: "
     print '\n'.join(all_times)
+
+    if route_answer:
+        create_favorite_answer = ""
+        while create_favorite_answer not in ["Yes", "No"]:
+            create_favorite_answer = raw_input(
+                "Want to save this stop as a favorite? (Yes or No) ")
+
+        if create_favorite_answer == "Yes":
+            favorite_name_answer = raw_input("Name this favorite: ")
+            save_favorite(favorite_name_answer, stop_code)
+            print "Saved!"
+            print "Favorites:"
+            print ", ".join(all_favorites())
+            print "All done!"
 
 
 def get_muni_routes():
@@ -109,6 +134,31 @@ def get_xml_response(end_point, params):
     response = requests.get(end_point, params=params)
     return ElementTree.fromstring(response.content)
 
+
+def save_favorite(favorite_name, stop_code):
+    s = shelve.open('favorites')
+    try:
+        s[favorite_name] = {'stop_code': stop_code}
+    finally:
+        s.close()
+
+
+def get_favorite_info(favorite_name):
+    s = shelve.open('favorites')
+    try:
+        favorite_info = s[favorite_name]
+    finally:
+        s.close()
+    return favorite_info
+
+
+def all_favorites():
+    s = shelve.open('favorites')
+    try:
+        favorite_names = s.keys()
+    finally:
+        s.close()
+    return favorite_names
 
 if __name__ == "__main__":
     # execute only if run as a script
