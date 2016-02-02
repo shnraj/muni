@@ -11,7 +11,7 @@ def main():
     favorite_answer = ''
     all_routes = get_muni_routes()
     while not route_answer or not favorite_answer:
-        answer = raw_input("Enter the muni route you or favorite: ")
+        answer = raw_input("Enter the muni route or favorite: ")
 
         if answer in all_routes.keys():
             route_answer = answer
@@ -51,7 +51,8 @@ def main():
 
     all_times = get_next_departures(stop_code)
     print "Next departure times: "
-    print '\n'.join(all_times)
+    for route, time in all_times.items():
+        print route + ": " + time
 
     if route_answer:
         create_favorite_answer = ""
@@ -123,8 +124,9 @@ def get_next_departures(stop_code):
     stop = stop_list.find("Stop")
     departure_time_list = stop.find("DepartureTimeList")
 
-    return [time.text
-            for time in list(departure_time_list.iter("DepartureTime"))]
+    return {route.get("Name"): time.text
+            for route, time in zip(list(route_list.iter("Route")),
+            list(departure_time_list.iter("DepartureTime")))}
 
 
 def get_xml_response(end_point, params):
