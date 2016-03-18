@@ -1,6 +1,8 @@
 import config  # file that contains my API token
+import os
 import requests  # used to make the API request
 import shelve  # simple persistent storage option
+import time
 from xml.etree import ElementTree  # used to parse XML
 
 
@@ -49,10 +51,14 @@ def main():
     if favorite_answer:
         stop_code = get_favorite_info(favorite_answer)['stop_code']
 
-    all_times = get_next_departures(stop_code)
-    print "Next departure times: "
-    for route, time in all_times.items():
-        print route + ": " + time
+    while True:
+        all_times = get_next_departures(stop_code)
+        print "Next departure times: "
+        for route, next_time in all_times.items():
+            result_string = route + ": " + next_time
+            print result_string
+            os.system("say %s minutes" % (result_string))
+        time.sleep(60)
 
     if route_answer:
         create_favorite_answer = ""
