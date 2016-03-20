@@ -51,15 +51,6 @@ def main():
     if favorite_answer:
         stop_code = get_favorite_info(favorite_answer)['stop_code']
 
-    while True:
-        all_times = get_next_departures(stop_code)
-        print "Next departure times: "
-        for route, next_time in all_times.items():
-            result_string = route + ": " + next_time
-            print result_string
-            os.system("say %s minutes" % (result_string))
-        time.sleep(60)
-
     if route_answer:
         create_favorite_answer = ""
         while create_favorite_answer not in ["Yes", "No"]:
@@ -72,7 +63,15 @@ def main():
             print "Saved!"
             print "Favorites:"
             print ", ".join(all_favorites())
-            print "All done!"
+
+    while True:
+        all_times = get_next_departures(stop_code)
+        print "Next departure times: "
+        for route, next_time in all_times.items():
+            result_string = route + ": " + next_time
+            print result_string
+            os.system("say %s minutes" % (result_string))
+        time.sleep(60)
 
 
 def get_muni_routes():
